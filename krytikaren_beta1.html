@@ -192,7 +192,6 @@
     .sell-btn { background: #c0392b; }
     .buy-btn { background: #27ae60; }
 
-    /* Админка */
     #admin-panel {
       max-width: 1100px;
       margin: 0 auto;
@@ -231,7 +230,6 @@
     .online { background: #2ecc71; }
     .offline { background: #777; }
 
-    /* Модалки */
     .modal {
       position: fixed; inset: 0;
       background: rgba(0,0,0,0.85);
@@ -250,8 +248,6 @@
       width: 90%;
     }
     .modal-content img { width: 160px; height: 160px; object-fit: cover; border-radius: 12px; }
-
-    .trade-modal .modal-content { max-width: 500px; text-align: left; }
   </style>
 </head>
 <body>
@@ -303,7 +299,6 @@
       <button class="tab-btn" onclick="switchTab('trade')">Трейд</button>
     </div>
 
-    <!-- Крутить -->
     <div id="tab-spin" class="tab-content active">
       <div class="spin-controls">
         <button class="mult-btn active" data-mult="1">x1</button>
@@ -314,7 +309,6 @@
       <button class="spin-btn" id="spin-btn" onclick="startSpin()">ИСПЫТАТЬ ЧЕСТЬ</button>
     </div>
 
-    <!-- Рынок -->
     <div id="tab-market" class="tab-content">
       <h2>Рынок</h2>
       <div style="margin:15px 0; padding:12px; background:#1a1a1a; border-radius:10px;">
@@ -327,13 +321,11 @@
       <div class="market-grid" id="market-grid"></div>
     </div>
 
-    <!-- Инвентарь -->
     <div id="tab-inventory" class="tab-content">
       <h2>Твой Инвентарь</h2>
       <div class="inventory-grid" id="inventory-grid"></div>
     </div>
 
-    <!-- Трейд -->
     <div id="tab-trade" class="tab-content">
       <h2>Игроки онлайн</h2>
       <div id="players-list"></div>
@@ -409,7 +401,9 @@
   // ================== SUPABASE ==================
   const SUPABASE_URL = 'https://mcxyrqxxfrkeuigokrov.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_6rP-D6v4qFu0G8klWa-BzQ_mRTCtEH1';
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // Исправленное объявление (чтобы не было конфликта имён)
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   // ================== ДАННЫЕ ==================
   const KARENS = [
@@ -441,8 +435,8 @@
   const SELL_PRICE = { common: 10, rare: 50, super: 500, secret: 100000 };
   const BUY_PRICE  = { common: 15, rare: 75, super: 750, secret: 150000 };
 
-  let currentUser = null;      // игрок
-  let currentAdmin = null;     // админ
+  let currentUser = null;
+  let currentAdmin = null;
   let inventory = {};
   let spinMultiplier = 1;
   let fingerprint = localStorage.getItem('karen_fp') || Math.random().toString(36).slice(2);
@@ -474,12 +468,12 @@
     const password = document.getElementById('player-password').value;
     if (!login || !password) return alert('Заполни логин и пароль');
 
-    const { data: existing } = await supabase.from('players').select('id').eq('login', login).maybeSingle();
+    const { data: existing } = await sb.from('players').select('id').eq('login', login).maybeSingle();
     if (existing) return alert('Такой логин уже занят');
 
-    const { data, error } = await supabase.from('players').insert({
+    const { error } = await sb.from('players').insert({
       login, password, spins: 50, money: 0
-    }).select().single();
+    });
 
     if (error) return alert('Ошибка: ' + error.message);
     alert('Аккаунт создан! Теперь войди.');
@@ -489,7 +483,7 @@
     const login = document.getElementById('player-login').value.trim();
     const password = document.getElementById('player-password').value;
 
-    const { data, error } = await supabase.from('players')
+    const { data, error } = await sb.from('players')
       .select('*')
       .eq('login', login)
       .eq('password', password)
@@ -498,16 +492,8 @@
     if (error || !data) return alert('Неверный логин или пароль');
     if (data.is_banned) return alert('Аккаунт заблокирован: ' + (data.ban_reason || ''));
 
-    // Проверка бана по IP/отпечатку
-    const ip = 'unknown'; // в реальности можно получать через сервис
-    const { data: bans } = await supabase.from('bans')
-      .select('*')
-      .or(`ip.eq.${ip},fingerprint.eq.${fingerprint}`);
-
-    if (bans && bans.length) return alert('Доступ запрещён');
-
     currentUser = data;
-    await supabase.from('players').update({
+    await sb.from('players').update({
       last_online: new Date().toISOString(),
       fingerprint
     }).eq('id', currentUser.id);
@@ -529,10 +515,10 @@
     const password = document.getElementById('admin-password').value;
     if (!login || !password) return alert('Заполни данные');
 
-    const { data: existing } = await supabase.from('admins').select('id').eq('login', login).maybeSingle();
+    const { data: existing } = await sb.from('admins').select('id').eq('login', login).maybeSingle();
     if (existing) return alert('Такой логин уже есть');
 
-    const { error } = await supabase.from('admins').insert({ login, password });
+    const { error } = await sb.from('admins').insert({ login, password });
     if (error) return alert('Ошибка: ' + error.message);
     alert('Админ создан! Теперь войди.');
   }
@@ -541,7 +527,7 @@
     const login = document.getElementById('admin-login').value.trim();
     const password = document.getElementById('admin-password').value;
 
-    const { data, error } = await supabase.from('admins')
+    const { data, error } = await sb.from('admins')
       .select('*')
       .eq('login', login)
       .eq('password', password)
@@ -583,7 +569,7 @@
 
   // ========== ИНВЕНТАРЬ ==========
   async function loadInventory() {
-    const { data } = await supabase.from('inventory')
+    const { data } = await sb.from('inventory')
       .select('*')
       .eq('player_id', currentUser.id);
 
@@ -595,12 +581,12 @@
 
   async function saveInventoryItem(karenId, amount) {
     if (amount <= 0) {
-      await supabase.from('inventory').delete()
+      await sb.from('inventory').delete()
         .eq('player_id', currentUser.id)
         .eq('karen_id', karenId);
       delete inventory[karenId];
     } else {
-      await supabase.from('inventory').upsert({
+      await sb.from('inventory').upsert({
         player_id: currentUser.id,
         karen_id: karenId,
         amount
@@ -633,6 +619,7 @@
 
   function buildTape(index) {
     const tape = document.getElementById(`tape-${index}`);
+    if (!tape) return;
     tape.style.transition = 'none';
     tape.style.transform = 'translateX(0)';
     tape.innerHTML = '';
@@ -674,7 +661,7 @@
     if (currentUser.spins < spinMultiplier) return alert('Недостаточно круток!');
     
     currentUser.spins -= spinMultiplier;
-    await supabase.from('players').update({ spins: currentUser.spins }).eq('id', currentUser.id);
+    await sb.from('players').update({ spins: currentUser.spins }).eq('id', currentUser.id);
     updateUI();
 
     document.getElementById('spin-btn').disabled = true;
@@ -693,11 +680,12 @@
       const tape = document.getElementById(`tape-${i}`);
       buildTape(i);
       const prizeIndex = 32;
-      if (tape.children[prizeIndex]) {
+      if (tape && tape.children[prizeIndex]) {
         tape.replaceChild(createSlotCard(prize), tape.children[prizeIndex]);
       }
 
       setTimeout(() => {
+        if (!tape) return;
         tape.style.transition = 'transform 4s cubic-bezier(0.15, 0.85, 0.25, 1)';
         const cardWidth = 100;
         const wrapperWidth = tape.parentElement.offsetWidth;
@@ -752,7 +740,7 @@
     if (currentUser.money < price) return alert('Недостаточно C!');
 
     currentUser.money -= price;
-    await supabase.from('players').update({ money: currentUser.money }).eq('id', currentUser.id);
+    await sb.from('players').update({ money: currentUser.money }).eq('id', currentUser.id);
     const newAmount = (inventory[id] || 0) + 1;
     await saveInventoryItem(id, newAmount);
     updateUI();
@@ -766,7 +754,7 @@
 
     currentUser.money -= cost;
     currentUser.spins += amount;
-    await supabase.from('players').update({
+    await sb.from('players').update({
       money: currentUser.money,
       spins: currentUser.spins
     }).eq('id', currentUser.id);
@@ -799,14 +787,14 @@
     inventory[id]--;
     currentUser.money += SELL_PRICE[karen.tier];
     await saveInventoryItem(id, inventory[id]);
-    await supabase.from('players').update({ money: currentUser.money }).eq('id', currentUser.id);
+    await sb.from('players').update({ money: currentUser.money }).eq('id', currentUser.id);
     updateUI();
     renderInventory();
   }
 
-  // ========== ТРЕЙД (базовая версия) ==========
+  // ========== ТРЕЙД ==========
   async function loadPlayersForTrade() {
-    const { data } = await supabase.from('players')
+    const { data } = await sb.from('players')
       .select('id, login, last_online')
       .neq('id', currentUser.id)
       .order('last_online', { ascending: false });
@@ -815,7 +803,7 @@
     list.innerHTML = '';
 
     (data || []).forEach(p => {
-      const isOnline = (new Date() - new Date(p.last_online)) < 60000; // 1 минута
+      const isOnline = (new Date() - new Date(p.last_online)) < 60000;
       const div = document.createElement('div');
       div.className = 'player-row';
       div.innerHTML = `
@@ -823,7 +811,7 @@
           <span class="online-dot ${isOnline ? 'online' : 'offline'}"></span>
           ${p.login}
         </div>
-        <button onclick="alert('Трейд с ${p.login} — в следующей версии будет полноценный интерфейс')">Предложить трейд</button>
+        <button onclick="alert('Полноценный трейд будет в следующем обновлении')">Предложить трейд</button>
       `;
       list.appendChild(div);
     });
@@ -832,7 +820,7 @@
   function startOnlineHeartbeat() {
     setInterval(async () => {
       if (currentUser) {
-        await supabase.from('players').update({
+        await sb.from('players').update({
           last_online: new Date().toISOString()
         }).eq('id', currentUser.id);
       }
@@ -852,7 +840,7 @@
   }
 
   async function loadAdminPlayers() {
-    const { data } = await supabase.from('players')
+    const { data } = await sb.from('players')
       .select('*')
       .order('last_online', { ascending: false });
 
@@ -876,7 +864,7 @@
   }
 
   async function getPlayerByLogin(login) {
-    const { data } = await supabase.from('players').select('*').eq('login', login).maybeSingle();
+    const { data } = await sb.from('players').select('*').eq('login', login).maybeSingle();
     return data;
   }
 
@@ -886,14 +874,14 @@
     const player = await getPlayerByLogin(login);
     if (!player) return alert('Игрок не найден');
 
-    const { data: inv } = await supabase.from('inventory')
+    const { data: inv } = await sb.from('inventory')
       .select('*')
       .eq('player_id', player.id)
       .eq('karen_id', karenId)
       .maybeSingle();
 
     const amount = (inv?.amount || 0) + 1;
-    await supabase.from('inventory').upsert({
+    await sb.from('inventory').upsert({
       player_id: player.id,
       karen_id: karenId,
       amount
@@ -909,7 +897,7 @@
     const player = await getPlayerByLogin(login);
     if (!player) return alert('Игрок не найден');
 
-    const { data: inv } = await supabase.from('inventory')
+    const { data: inv } = await sb.from('inventory')
       .select('*')
       .eq('player_id', player.id)
       .eq('karen_id', karenId)
@@ -919,9 +907,9 @@
 
     const amount = inv.amount - 1;
     if (amount <= 0) {
-      await supabase.from('inventory').delete().eq('id', inv.id);
+      await sb.from('inventory').delete().eq('id', inv.id);
     } else {
-      await supabase.from('inventory').update({ amount }).eq('id', inv.id);
+      await sb.from('inventory').update({ amount }).eq('id', inv.id);
     }
     alert('Карен забран!');
   }
@@ -933,7 +921,7 @@
     const player = await getPlayerByLogin(login);
     if (!player) return alert('Игрок не найден');
 
-    await supabase.from('players').update({ money: player.money + amount }).eq('id', player.id);
+    await sb.from('players').update({ money: player.money + amount }).eq('id', player.id);
     alert('Деньги выданы!');
     loadAdminPlayers();
   }
@@ -945,7 +933,7 @@
     const player = await getPlayerByLogin(login);
     if (!player) return alert('Игрок не найден');
 
-    await supabase.from('players').update({ money: Math.max(0, player.money - amount) }).eq('id', player.id);
+    await sb.from('players').update({ money: Math.max(0, player.money - amount) }).eq('id', player.id);
     alert('Деньги забраны!');
     loadAdminPlayers();
   }
@@ -957,7 +945,7 @@
     const player = await getPlayerByLogin(login);
     if (!player) return alert('Игрок не найден');
 
-    await supabase.from('players').update({ spins: player.spins + amount }).eq('id', player.id);
+    await sb.from('players').update({ spins: player.spins + amount }).eq('id', player.id);
     alert('Крутки выданы!');
     loadAdminPlayers();
   }
@@ -969,7 +957,7 @@
     const player = await getPlayerByLogin(login);
     if (!player) return alert('Игрок не найден');
 
-    await supabase.from('players').update({ spins: Math.max(0, player.spins - amount) }).eq('id', player.id);
+    await sb.from('players').update({ spins: Math.max(0, player.spins - amount) }).eq('id', player.id);
     alert('Крутки забраны!');
     loadAdminPlayers();
   }
@@ -979,7 +967,7 @@
     const player = await getPlayerByLogin(login);
     if (!player) return alert('Игрок не найден');
 
-    await supabase.from('players').update({
+    await sb.from('players').update({
       rig_common: document.getElementById('rig-common').checked,
       rig_rare: document.getElementById('rig-rare').checked,
       rig_super: document.getElementById('rig-super').checked,
@@ -995,7 +983,7 @@
     const player = await getPlayerByLogin(login);
     if (!player) return alert('Игрок не найден');
 
-    await supabase.from('players').update({
+    await sb.from('players').update({
       is_banned: true,
       ban_reason: reason || 'Без причины'
     }).eq('id', player.id);
@@ -1009,7 +997,7 @@
     const player = await getPlayerByLogin(login);
     if (!player) return alert('Игрок не найден');
 
-    await supabase.from('players').update({
+    await sb.from('players').update({
       is_banned: false,
       ban_reason: null
     }).eq('id', player.id);
