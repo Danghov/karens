@@ -158,7 +158,7 @@
     .bg-super { border-bottom-color: var(--super) !important; }
     .bg-secret { border-bottom-color: var(--secret) !important; }
 
-    .inventory-grid, .market-grid, .players-grid {
+    .inventory-grid, .market-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
       gap: 14px;
@@ -247,19 +247,16 @@
       max-width: 360px;
       width: 90%;
     }
-    .modal-content img { width: 160px; height: 160px; object-fit: cover; border-radius: 12px; }
   </style>
 </head>
 <body>
 
-  <!-- 1. Общий пароль -->
   <div id="auth-screen" class="screen" style="display:flex">
     <h2 style="color:#ffd700">Крути Карен!</h2>
     <input type="password" id="main-pass" placeholder="Пароль чести" autofocus>
     <button onclick="checkMainPassword()">Войти</button>
   </div>
 
-  <!-- 2. Вход игрока -->
   <div id="player-auth" class="screen">
     <h2>Вход / Регистрация игрока</h2>
     <input type="text" id="player-login" placeholder="Логин">
@@ -269,7 +266,6 @@
     <button onclick="backToMain()" style="background:#555;margin-top:10px">Назад</button>
   </div>
 
-  <!-- 3. Вход админа -->
   <div id="admin-auth" class="screen">
     <h2 style="color:#ff5555">Вход администратора</h2>
     <input type="text" id="admin-login" placeholder="Логин админа">
@@ -279,7 +275,6 @@
     <button onclick="backToMain()" style="background:#555;margin-top:10px">Назад</button>
   </div>
 
-  <!-- Игровая часть -->
   <div class="container" id="game">
     <div class="header">
       <h1>Крути Карен!</h1>
@@ -332,7 +327,6 @@
     </div>
   </div>
 
-  <!-- Админ панель -->
   <div id="admin-panel">
     <h1 style="color:#ff5555; text-align:center; margin-bottom:20px;">Панель Главврача</h1>
     <div style="text-align:center; margin-bottom:20px;">
@@ -365,7 +359,7 @@
     </div>
 
     <div class="admin-section">
-      <h3>Риг (шансы) на игрока</h3>
+      <h3>Риг на игрока</h3>
       <div class="admin-row">
         <input type="text" id="rig-login" placeholder="Логин игрока" style="width:180px">
         <label><input type="checkbox" id="rig-common" checked> Common</label>
@@ -387,9 +381,8 @@
     </div>
   </div>
 
-  <!-- Модалка выигрыша -->
   <div id="win-modal" class="modal" onclick="closeModal()">
-    <div class="modal-content" id="modal-content">
+    <div class="modal-content">
       <h2 id="win-tier">ВЫПАЛ!</h2>
       <div id="win-images"></div>
       <h3 id="win-name"></h3>
@@ -398,14 +391,12 @@
   </div>
 
 <script>
-  // ================== SUPABASE ==================
   const SUPABASE_URL = 'https://mcxyrqxxfrkeuigokrov.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_6rP-D6v4qFu0G8klWa-BzQ_mRTCtEH1';
 
-  // Исправленное объявление (чтобы не было конфликта имён)
-  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  // Безопасное создание клиента
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  // ================== ДАННЫЕ ==================
   const KARENS = [
     { id: 'common_karen', name: 'Обычный Карен', tier: 'common', img: 'https://i.yapx.ru/eS6WDb.jpg' },
     { id: 'alparen', name: 'Карен-альпарен', tier: 'common', img: 'https://i.yapx.ru/eS6WKb.jpg' },
@@ -413,20 +404,17 @@
     { id: 'alkaren', name: 'Алкарен', tier: 'common', img: 'https://i.yapx.ru/eUrSRb.jpg' },
     { id: 'pechkaren', name: 'Печкарен', tier: 'common', img: 'https://i.yapx.ru/eUrS4b.jpg' },
     { id: 'oboroteren', name: 'Оборотерен', tier: 'common', img: 'https://via.placeholder.com/150?text=Оборотерен' },
-
     { id: 'karamelka', name: 'Каренка карамелька', tier: 'rare', img: 'https://i.yapx.ru/eS6V1b.jpg' },
     { id: 'boxren', name: 'Боксрен', tier: 'rare', img: 'https://i.yapx.ru/eS6VJb.jpg' },
     { id: 'vedmren', name: 'Ведьмрен', tier: 'rare', img: 'https://i.yapx.ru/eUrTEb.jpg' },
     { id: 'skibidren', name: 'Скибидирен', tier: 'rare', img: 'https://i.yapx.ru/eUrTwb.jpg' },
     { id: 'tykvaren', name: 'Тыкварен', tier: 'rare', img: 'https://i.yapx.ru/eUrUUb.jpg' },
     { id: 'harchoren', name: 'Харчорен', tier: 'rare', img: 'https://via.placeholder.com/150?text=Харчорен' },
-
     { id: 'dobren', name: 'Добрен', tier: 'super', img: 'https://i.yapx.ru/eS6U4b.jpg' },
     { id: 'zloren', name: 'Злорен', tier: 'super', img: 'https://i.yapx.ru/eS6Uvb.jpg' },
     { id: 'zmeikarenych', name: 'Змей Кареныч', tier: 'super', img: 'https://i.yapx.ru/eUrU7b.jpg' },
     { id: 'tachkaren', name: 'Тачкарен', tier: 'super', img: 'https://via.placeholder.com/150?text=Тачкарен' },
     { id: 'sigmaren', name: 'Сигмарен', tier: 'super', img: 'https://via.placeholder.com/150?text=Сигмарен' },
-
     { id: 'golden_karen', name: 'Golden Karen', tier: 'secret', img: 'https://i.yapx.ru/eS6Vib.jpg' },
     { id: 'primeren', name: 'Праймрен', tier: 'secret', img: 'https://i.yapx.ru/eUrWHb.jpg' },
     { id: 'karkaren', name: 'Каркарен', tier: 'secret', img: 'https://via.placeholder.com/150?text=Каркарен' }
@@ -442,7 +430,6 @@
   let fingerprint = localStorage.getItem('karen_fp') || Math.random().toString(36).slice(2);
   localStorage.setItem('karen_fp', fingerprint);
 
-  // ================== ВХОД ==================
   function checkMainPassword() {
     const pass = document.getElementById('main-pass').value;
     if (pass === 'karen2026') {
@@ -462,7 +449,6 @@
     document.getElementById('auth-screen').style.display = 'flex';
   }
 
-  // ========== ИГРОКИ ==========
   async function playerRegister() {
     const login = document.getElementById('player-login').value.trim();
     const password = document.getElementById('player-password').value;
@@ -471,10 +457,7 @@
     const { data: existing } = await sb.from('players').select('id').eq('login', login).maybeSingle();
     if (existing) return alert('Такой логин уже занят');
 
-    const { error } = await sb.from('players').insert({
-      login, password, spins: 50, money: 0
-    });
-
+    const { error } = await sb.from('players').insert({ login, password, spins: 50, money: 0 });
     if (error) return alert('Ошибка: ' + error.message);
     alert('Аккаунт создан! Теперь войди.');
   }
@@ -483,20 +466,12 @@
     const login = document.getElementById('player-login').value.trim();
     const password = document.getElementById('player-password').value;
 
-    const { data, error } = await sb.from('players')
-      .select('*')
-      .eq('login', login)
-      .eq('password', password)
-      .maybeSingle();
-
+    const { data, error } = await sb.from('players').select('*').eq('login', login).eq('password', password).maybeSingle();
     if (error || !data) return alert('Неверный логин или пароль');
     if (data.is_banned) return alert('Аккаунт заблокирован: ' + (data.ban_reason || ''));
 
     currentUser = data;
-    await sb.from('players').update({
-      last_online: new Date().toISOString(),
-      fingerprint
-    }).eq('id', currentUser.id);
+    await sb.from('players').update({ last_online: new Date().toISOString(), fingerprint }).eq('id', currentUser.id);
 
     document.getElementById('player-auth').style.display = 'none';
     document.getElementById('game').style.display = 'block';
@@ -509,7 +484,6 @@
     startOnlineHeartbeat();
   }
 
-  // ========== АДМИНЫ ==========
   async function adminRegister() {
     const login = document.getElementById('admin-login').value.trim();
     const password = document.getElementById('admin-password').value;
@@ -527,12 +501,7 @@
     const login = document.getElementById('admin-login').value.trim();
     const password = document.getElementById('admin-password').value;
 
-    const { data, error } = await sb.from('admins')
-      .select('*')
-      .eq('login', login)
-      .eq('password', password)
-      .maybeSingle();
-
+    const { data, error } = await sb.from('admins').select('*').eq('login', login).eq('password', password).maybeSingle();
     if (error || !data) return alert('Неверный логин или пароль');
 
     currentAdmin = data;
@@ -548,13 +517,11 @@
     document.getElementById('auth-screen').style.display = 'flex';
   }
 
-  // ========== UI ==========
   function switchTab(tab) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     event.target.classList.add('active');
     document.getElementById('tab-' + tab).classList.add('active');
-
     if (tab === 'inventory') renderInventory();
     if (tab === 'market') renderMarket();
     if (tab === 'trade') loadPlayersForTrade();
@@ -567,35 +534,22 @@
     document.getElementById('col-val').innerText = unique + ' / ' + KARENS.length;
   }
 
-  // ========== ИНВЕНТАРЬ ==========
   async function loadInventory() {
-    const { data } = await sb.from('inventory')
-      .select('*')
-      .eq('player_id', currentUser.id);
-
+    const { data } = await sb.from('inventory').select('*').eq('player_id', currentUser.id);
     inventory = {};
-    (data || []).forEach(item => {
-      inventory[item.karen_id] = item.amount;
-    });
+    (data || []).forEach(item => inventory[item.karen_id] = item.amount);
   }
 
   async function saveInventoryItem(karenId, amount) {
     if (amount <= 0) {
-      await sb.from('inventory').delete()
-        .eq('player_id', currentUser.id)
-        .eq('karen_id', karenId);
+      await sb.from('inventory').delete().eq('player_id', currentUser.id).eq('karen_id', karenId);
       delete inventory[karenId];
     } else {
-      await sb.from('inventory').upsert({
-        player_id: currentUser.id,
-        karen_id: karenId,
-        amount
-      }, { onConflict: 'player_id,karen_id' });
+      await sb.from('inventory').upsert({ player_id: currentUser.id, karen_id: karenId, amount }, { onConflict: 'player_id,karen_id' });
       inventory[karenId] = amount;
     }
   }
 
-  // ========== РУЛЕТКА ==========
   document.querySelectorAll('.mult-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.mult-btn').forEach(b => b.classList.remove('active'));
@@ -618,7 +572,7 @@
   }
 
   function buildTape(index) {
-    const tape = document.getElementById(`tape-${index}`);
+    const tape = document.getElementById('tape-' + index);
     if (!tape) return;
     tape.style.transition = 'none';
     tape.style.transform = 'translateX(0)';
@@ -639,34 +593,31 @@
   function rollKaren(rig) {
     let pool = KARENS.filter(k => rig['rig_' + k.tier]);
     if (pool.length === 0) pool = KARENS;
-
     const rand = Math.random() * 100;
     if (rand < 0.3 && pool.some(k => k.tier === 'secret')) {
-      const secrets = pool.filter(k => k.tier === 'secret');
-      return secrets[Math.floor(Math.random() * secrets.length)];
+      const arr = pool.filter(k => k.tier === 'secret');
+      return arr[Math.floor(Math.random() * arr.length)];
     }
     if (rand < 3 && pool.some(k => k.tier === 'super')) {
-      const supers = pool.filter(k => k.tier === 'super');
-      return supers[Math.floor(Math.random() * supers.length)];
+      const arr = pool.filter(k => k.tier === 'super');
+      return arr[Math.floor(Math.random() * arr.length)];
     }
     if (rand < 35 && pool.some(k => k.tier === 'rare')) {
-      const rares = pool.filter(k => k.tier === 'rare');
-      return rares[Math.floor(Math.random() * rares.length)];
+      const arr = pool.filter(k => k.tier === 'rare');
+      return arr[Math.floor(Math.random() * arr.length)];
     }
-    const commons = pool.filter(k => k.tier === 'common');
-    return commons[Math.floor(Math.random() * commons.length)] || pool[0];
+    const arr = pool.filter(k => k.tier === 'common');
+    return arr[Math.floor(Math.random() * arr.length)] || pool[0];
   }
 
   async function startSpin() {
     if (currentUser.spins < spinMultiplier) return alert('Недостаточно круток!');
-    
     currentUser.spins -= spinMultiplier;
     await sb.from('players').update({ spins: currentUser.spins }).eq('id', currentUser.id);
     updateUI();
-
     document.getElementById('spin-btn').disabled = true;
-    const prizes = [];
 
+    const prizes = [];
     const rig = {
       rig_common: currentUser.rig_common,
       rig_rare: currentUser.rig_rare,
@@ -677,13 +628,12 @@
     for (let i = 0; i < spinMultiplier; i++) {
       const prize = rollKaren(rig);
       prizes.push(prize);
-      const tape = document.getElementById(`tape-${i}`);
+      const tape = document.getElementById('tape-' + i);
       buildTape(i);
       const prizeIndex = 32;
       if (tape && tape.children[prizeIndex]) {
         tape.replaceChild(createSlotCard(prize), tape.children[prizeIndex]);
       }
-
       setTimeout(() => {
         if (!tape) return;
         tape.style.transition = 'transform 4s cubic-bezier(0.15, 0.85, 0.25, 1)';
@@ -705,11 +655,9 @@
   }
 
   function showWinModal(prizes) {
-    const names = prizes.map(p => p.name).join(', ');
     document.getElementById('win-tier').innerText = prizes.length > 1 ? `ВЫПАЛО x${prizes.length}` : prizes[0].tier.toUpperCase();
-    document.getElementById('win-name').innerText = names;
-    const imagesDiv = document.getElementById('win-images');
-    imagesDiv.innerHTML = prizes.map(p => `<img src="${p.img}" style="width:90px;height:90px;margin:4px;border-radius:8px">`).join('');
+    document.getElementById('win-name').innerText = prizes.map(p => p.name).join(', ');
+    document.getElementById('win-images').innerHTML = prizes.map(p => `<img src="${p.img}" style="width:90px;height:90px;margin:4px;border-radius:8px">`).join('');
     document.getElementById('win-modal').style.display = 'flex';
   }
 
@@ -717,19 +665,13 @@
     document.getElementById('win-modal').style.display = 'none';
   }
 
-  // ========== РЫНОК & ИНВЕНТАРЬ ==========
   function renderMarket() {
     const grid = document.getElementById('market-grid');
     grid.innerHTML = '';
     KARENS.forEach(k => {
       const card = document.createElement('div');
       card.className = 'card';
-      card.innerHTML = `
-        <img src="${k.img}">
-        <div class="name">${k.name}</div>
-        <div style="color:var(--currency);font-size:13px">${BUY_PRICE[k.tier]} C</div>
-        <button class="buy-btn" onclick="buyKaren('${k.id}')">Купить</button>
-      `;
+      card.innerHTML = `<img src="${k.img}"><div class="name">${k.name}</div><div style="color:var(--currency);font-size:13px">${BUY_PRICE[k.tier]} C</div><button class="buy-btn" onclick="buyKaren('${k.id}')">Купить</button>`;
       grid.appendChild(card);
     });
   }
@@ -738,11 +680,9 @@
     const karen = KARENS.find(k => k.id === id);
     const price = BUY_PRICE[karen.tier];
     if (currentUser.money < price) return alert('Недостаточно C!');
-
     currentUser.money -= price;
     await sb.from('players').update({ money: currentUser.money }).eq('id', currentUser.id);
-    const newAmount = (inventory[id] || 0) + 1;
-    await saveInventoryItem(id, newAmount);
+    await saveInventoryItem(id, (inventory[id] || 0) + 1);
     updateUI();
     alert('Куплено!');
   }
@@ -751,13 +691,9 @@
     const amount = parseInt(document.getElementById('buy-spins-amount').value) || 1;
     const cost = amount * 25;
     if (currentUser.money < cost) return alert('Недостаточно C!');
-
     currentUser.money -= cost;
     currentUser.spins += amount;
-    await sb.from('players').update({
-      money: currentUser.money,
-      spins: currentUser.spins
-    }).eq('id', currentUser.id);
+    await sb.from('players').update({ money: currentUser.money, spins: currentUser.spins }).eq('id', currentUser.id);
     updateUI();
     alert(`Куплено ${amount} круток!`);
   }
@@ -769,20 +705,14 @@
       if (inventory[k.id] > 0) {
         const card = document.createElement('div');
         card.className = 'card';
-        card.innerHTML = `
-          <div class="count">x${inventory[k.id]}</div>
-          <img src="${k.img}">
-          <div class="name">${k.name}</div>
-          <div style="color:var(--currency);font-size:13px">${SELL_PRICE[k.tier]} C</div>
-          <button class="sell-btn" onclick="sellKaren('${k.id}')">Продать</button>
-        `;
+        card.innerHTML = `<div class="count">x${inventory[k.id]}</div><img src="${k.img}"><div class="name">${k.name}</div><div style="color:var(--currency);font-size:13px">${SELL_PRICE[k.tier]} C</div><button class="sell-btn" onclick="sellKaren('${k.id}')">Продать</button>`;
         grid.appendChild(card);
       }
     });
   }
 
   async function sellKaren(id) {
-    if (!inventory[id] || inventory[id] <= 0) return;
+    if (!inventory[id]) return;
     const karen = KARENS.find(k => k.id === id);
     inventory[id]--;
     currentUser.money += SELL_PRICE[karen.tier];
@@ -792,27 +722,15 @@
     renderInventory();
   }
 
-  // ========== ТРЕЙД ==========
   async function loadPlayersForTrade() {
-    const { data } = await sb.from('players')
-      .select('id, login, last_online')
-      .neq('id', currentUser.id)
-      .order('last_online', { ascending: false });
-
+    const { data } = await sb.from('players').select('id, login, last_online').neq('id', currentUser.id).order('last_online', { ascending: false });
     const list = document.getElementById('players-list');
     list.innerHTML = '';
-
     (data || []).forEach(p => {
       const isOnline = (new Date() - new Date(p.last_online)) < 60000;
       const div = document.createElement('div');
       div.className = 'player-row';
-      div.innerHTML = `
-        <div>
-          <span class="online-dot ${isOnline ? 'online' : 'offline'}"></span>
-          ${p.login}
-        </div>
-        <button onclick="alert('Полноценный трейд будет в следующем обновлении')">Предложить трейд</button>
-      `;
+      div.innerHTML = `<div><span class="online-dot ${isOnline ? 'online' : 'offline'}"></span>${p.login}</div><button onclick="alert('Трейд будет в следующем обновлении')">Предложить трейд</button>`;
       list.appendChild(div);
     });
   }
@@ -820,45 +738,31 @@
   function startOnlineHeartbeat() {
     setInterval(async () => {
       if (currentUser) {
-        await sb.from('players').update({
-          last_online: new Date().toISOString()
-        }).eq('id', currentUser.id);
+        await sb.from('players').update({ last_online: new Date().toISOString() }).eq('id', currentUser.id);
       }
     }, 30000);
   }
 
-  // ========== АДМИНКА ==========
   function fillAdminSelect() {
     const select = document.getElementById('admin-karen');
     select.innerHTML = '';
     KARENS.forEach(k => {
       const opt = document.createElement('option');
       opt.value = k.id;
-      opt.textContent = `${k.name} (${k.tier})`;
+      opt.textContent = k.name + ' (' + k.tier + ')';
       select.appendChild(opt);
     });
   }
 
   async function loadAdminPlayers() {
-    const { data } = await sb.from('players')
-      .select('*')
-      .order('last_online', { ascending: false });
-
+    const { data } = await sb.from('players').select('*').order('last_online', { ascending: false });
     const container = document.getElementById('admin-players-list');
     container.innerHTML = '';
-
     (data || []).forEach(p => {
       const isOnline = (new Date() - new Date(p.last_online)) < 60000;
       const div = document.createElement('div');
       div.className = 'player-row';
-      div.innerHTML = `
-        <div>
-          <span class="online-dot ${isOnline ? 'online' : 'offline'}"></span>
-          <strong>${p.login}</strong> — 
-          🎰 ${p.spins} | C ${p.money} 
-          ${p.is_banned ? '<span style="color:#ff5555">[БАН]</span>' : ''}
-        </div>
-      `;
+      div.innerHTML = `<div><span class="online-dot ${isOnline ? 'online' : 'offline'}"></span><strong>${p.login}</strong> — 🎰 ${p.spins} | C ${p.money} ${p.is_banned ? '<span style="color:#ff5555">[БАН]</span>' : ''}</div>`;
       container.appendChild(div);
     });
   }
@@ -873,20 +777,9 @@
     const karenId = document.getElementById('admin-karen').value;
     const player = await getPlayerByLogin(login);
     if (!player) return alert('Игрок не найден');
-
-    const { data: inv } = await sb.from('inventory')
-      .select('*')
-      .eq('player_id', player.id)
-      .eq('karen_id', karenId)
-      .maybeSingle();
-
+    const { data: inv } = await sb.from('inventory').select('*').eq('player_id', player.id).eq('karen_id', karenId).maybeSingle();
     const amount = (inv?.amount || 0) + 1;
-    await sb.from('inventory').upsert({
-      player_id: player.id,
-      karen_id: karenId,
-      amount
-    }, { onConflict: 'player_id,karen_id' });
-
+    await sb.from('inventory').upsert({ player_id: player.id, karen_id: karenId, amount }, { onConflict: 'player_id,karen_id' });
     alert('Карен выдан!');
     loadAdminPlayers();
   }
@@ -896,21 +789,10 @@
     const karenId = document.getElementById('admin-karen').value;
     const player = await getPlayerByLogin(login);
     if (!player) return alert('Игрок не найден');
-
-    const { data: inv } = await sb.from('inventory')
-      .select('*')
-      .eq('player_id', player.id)
-      .eq('karen_id', karenId)
-      .maybeSingle();
-
+    const { data: inv } = await sb.from('inventory').select('*').eq('player_id', player.id).eq('karen_id', karenId).maybeSingle();
     if (!inv || inv.amount <= 0) return alert('У игрока нет этого карена');
-
-    const amount = inv.amount - 1;
-    if (amount <= 0) {
-      await sb.from('inventory').delete().eq('id', inv.id);
-    } else {
-      await sb.from('inventory').update({ amount }).eq('id', inv.id);
-    }
+    if (inv.amount <= 1) await sb.from('inventory').delete().eq('id', inv.id);
+    else await sb.from('inventory').update({ amount: inv.amount - 1 }).eq('id', inv.id);
     alert('Карен забран!');
   }
 
@@ -920,7 +802,6 @@
     if (!amount) return;
     const player = await getPlayerByLogin(login);
     if (!player) return alert('Игрок не найден');
-
     await sb.from('players').update({ money: player.money + amount }).eq('id', player.id);
     alert('Деньги выданы!');
     loadAdminPlayers();
@@ -932,7 +813,6 @@
     if (!amount) return;
     const player = await getPlayerByLogin(login);
     if (!player) return alert('Игрок не найден');
-
     await sb.from('players').update({ money: Math.max(0, player.money - amount) }).eq('id', player.id);
     alert('Деньги забраны!');
     loadAdminPlayers();
@@ -944,7 +824,6 @@
     if (!amount) return;
     const player = await getPlayerByLogin(login);
     if (!player) return alert('Игрок не найден');
-
     await sb.from('players').update({ spins: player.spins + amount }).eq('id', player.id);
     alert('Крутки выданы!');
     loadAdminPlayers();
@@ -956,7 +835,6 @@
     if (!amount) return;
     const player = await getPlayerByLogin(login);
     if (!player) return alert('Игрок не найден');
-
     await sb.from('players').update({ spins: Math.max(0, player.spins - amount) }).eq('id', player.id);
     alert('Крутки забраны!');
     loadAdminPlayers();
@@ -966,14 +844,12 @@
     const login = document.getElementById('rig-login').value.trim();
     const player = await getPlayerByLogin(login);
     if (!player) return alert('Игрок не найден');
-
     await sb.from('players').update({
       rig_common: document.getElementById('rig-common').checked,
       rig_rare: document.getElementById('rig-rare').checked,
       rig_super: document.getElementById('rig-super').checked,
       rig_secret: document.getElementById('rig-secret').checked
     }).eq('id', player.id);
-
     alert('Риг применён!');
   }
 
@@ -982,12 +858,7 @@
     const reason = document.getElementById('ban-reason').value.trim();
     const player = await getPlayerByLogin(login);
     if (!player) return alert('Игрок не найден');
-
-    await sb.from('players').update({
-      is_banned: true,
-      ban_reason: reason || 'Без причины'
-    }).eq('id', player.id);
-
+    await sb.from('players').update({ is_banned: true, ban_reason: reason || 'Без причины' }).eq('id', player.id);
     alert('Игрок забанен!');
     loadAdminPlayers();
   }
@@ -996,12 +867,7 @@
     const login = document.getElementById('ban-login').value.trim();
     const player = await getPlayerByLogin(login);
     if (!player) return alert('Игрок не найден');
-
-    await sb.from('players').update({
-      is_banned: false,
-      ban_reason: null
-    }).eq('id', player.id);
-
+    await sb.from('players').update({ is_banned: false, ban_reason: null }).eq('id', player.id);
     alert('Игрок разбанен!');
     loadAdminPlayers();
   }
